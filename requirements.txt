@@ -3,3 +3,4 @@ flask==1.0.2
 pylint==1.9.2
 coverage==4.5.1
 gunicorn==19.8.1
+requests==2.19.1
