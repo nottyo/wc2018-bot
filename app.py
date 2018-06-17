@@ -1,7 +1,7 @@
 import os
+from datetime import datetime, date, timedelta
 from flask import Flask, request, abort
 import requests
-from datetime import datetime, date, timedelta
 from linebot import (
     LineBotApi, WebhookHandler
 )
@@ -58,7 +58,7 @@ def getFixtures():
     response = requests.get(url, headers=wc_api_headers)
     return response
 
-def handleWorldCupResult():
+def handle_worldcup_results():
     response = getFixtures()
     if response.status_code == 200:
         json = response.json()
@@ -71,7 +71,7 @@ def handleWorldCupResult():
         return text    
     return None
 
-def handleYesterdayWCResult():
+def handle_yesterday_results():
     response = getFixtures()
     if response.status_code == 200:
         json = response.json()
@@ -86,7 +86,7 @@ def handleYesterdayWCResult():
         return text    
     return None
 
-def handleLiveScore():
+def handle_live_score():
     response = getFixtures()
     if response.status_code == 200:
         json = response.json()
@@ -102,7 +102,7 @@ def handleLiveScore():
             return "ไม่มีบอลเตะตอนนี้นะครับ"
     return None
 
-def handleFixtures(): 
+def handle_fixtures(): 
     response = getFixtures()
     if response.status_code == 200:
         json = response.json()
@@ -125,7 +125,7 @@ def handleFixtures():
         return text        
     return None    
 
-def handleTodayFixtures(): 
+def handle_today_fixtures(): 
     response = getFixtures()
     if response.status_code == 200:
         json = response.json()
@@ -152,7 +152,7 @@ def handleTodayFixtures():
             return "ไม่มีโปรแกรมเตะสำหรับวันนี้ครับ พิมพ์ \"โปรแกรม\" เพื่อดูโปรแกรมการแข่งขันในวันอื่นๆ"      
     return None    
 
-def handleTodayResult():
+def handle_today_results():
     response = getFixtures()
     if response.status_code == 200:
         json = response.json()
@@ -175,17 +175,17 @@ def handle_message(event):
     text = event.message.text
     result = None
     if 'ผลบอล' in text:
-        result = handleWorldCupResult()
+        result = handle_worldcup_results()
     if 'ผลบอลเมื่อคืน' in text:
-        result = handleYesterdayWCResult()
+        result = handle_yesterday_results()
     if 'ผลบอลตอนนี้' in text:
-        result = handleLiveScore()
+        result = handle_live_score()
     if 'ผลบอลวันนี้' in text:
-        result = handleTodayResult()
+        result = handle_today_results()
     if 'โปรแกรม' in text:
-        result = handleFixtures() 
+        result = handle_fixtures() 
     if 'โปรแกรมวันนี้' in text:
-        result = handleTodayFixtures()
+        result = handle_today_fixtures()
     if result is not None:
             line_bot_api.reply_message(
                 event.reply_token,
