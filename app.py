@@ -1,5 +1,6 @@
-from flask import Flask, request, abort
 import os
+from flask import Flask, request, abort
+from datetime import datetime
 from linebot import (
     LineBotApi, WebhookHandler
 )
@@ -20,6 +21,17 @@ line_bot_api = LineBotApi(channel_access_token)
 handler = WebhookHandler(channel_secret)
 
 
+@app.route('/')
+def homepage():
+    the_time = datetime.now().strftime("%A, %d %b %Y %l:%M %p")
+
+    return """
+    <h1>Hello heroku</h1>
+    <p>It is currently {time}.</p>
+
+    <img src="http://loremflickr.com/600/400">
+    """.format(time=the_time)
+
 @app.route("/callback", methods=['POST'])
 def callback():
     # get X-Line-Signature header value
@@ -37,13 +49,11 @@ def callback():
 
     return 'OK'
 
-
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=event.message.text))
 
-
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True, use_reloader=True)

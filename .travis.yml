@@ -1,0 +1,15 @@
+language: python
+python:
+  - 3.6.5
+install: 
+  - pip install -r requirements.txt
+
+branches:
+  only:
+    - master
+
+deploy:
+  provider: heroku
+  api_key:
+    secure: HfS9FwFqUDpzVciVezXmAEaVb6JjXcZqEQg0kLfzLP6UR2efYSKzFO4TKratAqe2W/Q0dJp7OOanwqd1wf5Mw1raVy7X90JTFl8ZLPNtnXjkGt2TGWcPu9KA8357ApfbxLiC/DZ48xN+6fg6tyUHmeki6OTVY6FBTWXnzj3U2wTmS0mNtjewlypuz4j/VqxXu5bRkJalePBRANxgmuGvqCi/Gff2t0c5mJIWb+ftbw/0ARWANgHvYaKN3xudj7gM4MofDMwyX6KuKHl7IW+rH9+SAPy9OYHvhUT25qXmcw1aJJQ50yIUeERKRe/3huF9A011jbpVyPfEUghPhWTgv6yJX+x1Y+L7CW+vBTz/hcZb762Wuocju4V2yPqn+eupa5Vs9dQVmKqqpbsA7l5ptK/QDz0zn2Jed4JcgG1HYAgqSddlRpnvnkWK5fvOmNpV0kbQKJVeg2QVPej2IvCRJUPeV0CboaMAWVN/4y8tt91pjfn1egTdwStYvlHc1j8sfLDCNkZ/1egNjzswG8QDZ8GhXNAirkHVFnU5EG8PKbmGGOxtnmafyQpXv8oMyRW34rPK9uc7KBDutcU2R/JgsK2L0uoaWPzBBbnVesOCuk/Bz41I2YXeDYLpgf45XoWLgUnojULjPwUU/zubkBC48i2COVMkIcOQFEV8gbq+T04=
+  app: wc2018-bot  
