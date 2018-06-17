@@ -1,6 +1,7 @@
-import os
+import os, re, json
 from datetime import datetime, date, timedelta
 from flask import Flask, request, abort
+from googletrans import Translator
 import requests
 from linebot import (
     LineBotApi, WebhookHandler
@@ -13,7 +14,9 @@ from linebot.models import (
 )
 
 app = Flask(__name__)
-
+translator = Translator()
+with open('countries.json') as f:
+    countries = json.load(f)
 
 channel_secret = os.getenv('LINE_CHANNEL_SECRET', None)
 channel_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', None)
@@ -55,8 +58,26 @@ def callback():
 
 def getFixtures():
     url = wc_api + '/fixtures'
+    return requests.get(url, headers=wc_api_headers)
+
+def getTeam(team_name):
+    detect = translator.detect(team_name)
+    if detect.lang != 'en':
+        translate = translator.translate(team_name)
+        team_name = translate.text.title()
+        for country in countries:
+            if team_name in country['nationality']:
+                team_name = country['en_short_name']
+    
+    print("team_name: {}".format(team_name))
+    url = wc_api + '/teams'
     response = requests.get(url, headers=wc_api_headers)
-    return response
+    if response.status_code == 200: 
+        json = response.json()
+        for team in json['teams']:
+            if team['name'].lower() == team_name.lower():
+                return team['_links']['self']['href']
+    return None            
 
 def handle_worldcup_results():
     response = getFixtures()
@@ -168,7 +189,38 @@ def handle_today_results():
             return text
         else:
             return "ยังไม่มีผลบอลสำหรับวันนี้ครับ"  
-    return None   
+    return None
+
+def handle_team_fixture(team_str):
+    team_link = getTeam(team_str)
+    if team_link is not None:
+        response = requests.get(team_link + '/fixtures', headers=wc_api_headers)
+        if response.status_code == 200:
+            text = ""
+            json = response.json()
+            for fixture in json['fixtures']:
+                if fixture['status'] == 'TIMED':
+                    dt=datetime.strptime(fixture['date'],'%Y-%m-%dT%H:%M:%SZ') + timedelta(hours=7)
+                    text += dt.strftime("%A %d %B %Y") + "\n"
+                    text += fixture['homeTeamName'] + ' vs. ' + fixture['awayTeamName'] + ' ' + dt.strftime("%H:%M") + "\n"
+                    text += "================\n"    
+        if text != "":
+            return text
+        else:
+            return "ทีม {} ไม่มีโปรแกรมเตะแล้วครับ".format(team_str)        
+    return "ทีม {} ไม่ได้เข้าร่วมในฟุตบอลโลกนะครับ".format(team_str)
+
+def handle_team_players(team_str):
+    team_link = getTeam(team_str)
+    if team_link is not None:
+        response = requests.get(team_link + '/players', headers=wc_api_headers)
+        if response.status_code == 200:
+            text = ""
+            json = response.json()
+            for player in json['players']:
+                text += player['name'] + '   | ' + player['position'] + ' | เบอร์ ' + str(player['jerseyNumber']) + "\n" 
+            return text
+    return "ทีม {} ไม่ได้เข้าร่วมในฟุตบอลโลกนะครับ".format(team_str)
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -178,7 +230,7 @@ def handle_message(event):
         result = handle_worldcup_results()
     if 'ผลบอลเมื่อคืน' in text:
         result = handle_yesterday_results()
-    if 'ผลบอลตอนนี้' in text:
+    if 'ผลบอลสด' in text:
         result = handle_live_score()
     if 'ผลบอลวันนี้' in text:
         result = handle_today_results()
@@ -186,6 +238,12 @@ def handle_message(event):
         result = handle_fixtures() 
     if 'โปรแกรมวันนี้' in text:
         result = handle_today_fixtures()
+    if re.search('โปรแกรมของ([\w\W\s]+)', text):
+        m = re.search('โปรแกรมของ([\w\W\s]+)', text)
+        result = handle_team_fixture(m.group(1))
+    if re.search('(นักเตะทีมชาติ|นักเตะของ)([\w\W\s]+)', text):
+        m = re.search('(นักเตะทีมชาติ|นักเตะของ)([\w\W\s]+)', text)
+        result = handle_team_players(m.group(2))
     if result is not None:
             line_bot_api.reply_message(
                 event.reply_token,
