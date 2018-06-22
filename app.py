@@ -117,8 +117,7 @@ def handle_worldcup_results():
                 result = fixture['result']
                 home_team_emoji = get_country_emoji(fixture['homeTeamName'])
                 away_team_emoji = get_country_emoji(fixture['awayTeamName'])
-                text += '[FT] ' + home_team_emoji + ' ' + fixture['homeTeamName'] + ' ' + str(result['goalsHomeTeam']) \
-                        + ' - ' + str(result['goalsAwayTeam']) + ' ' + fixture['awayTeamName'] + ' ' + away_team_emoji
+                text += '[FT] ' + home_team_emoji + ' ' + fixture['homeTeamName'] + ' ' + str(result['goalsHomeTeam']) + ' - ' + str(result['goalsAwayTeam']) + ' ' + fixture['awayTeamName'] + ' ' + away_team_emoji
                 text += '\n' 
         return text    
     return None
@@ -136,9 +135,8 @@ def handle_yesterday_results():
                 result = fixture['result']
                 home_team_emoji = get_country_emoji(fixture['homeTeamName'])
                 away_team_emoji = get_country_emoji(fixture['awayTeamName'])
-                text += '[FT] ' + home_team_emoji + ' ' + fixture['homeTeamName'] + ' ' + str(result['goalsHomeTeam']) \
-                        + ' - ' + str(result['goalsAwayTeam']) + ' ' + fixture['awayTeamName'] + ' ' + away_team_emoji
-            text += '\n'
+                text += '[FT] ' + home_team_emoji + ' ' + fixture['homeTeamName'] + ' ' + str(result['goalsHomeTeam']) + ' - ' + str(result['goalsAwayTeam']) + ' ' + fixture['awayTeamName'] + ' ' + away_team_emoji
+                text += '\n'
         return text    
     return None
 
@@ -153,9 +151,8 @@ def handle_live_score():
                 result = fixture['result']
                 home_team_emoji = get_country_emoji(fixture['homeTeamName'])
                 away_team_emoji = get_country_emoji(fixture['awayTeamName'])
-                text += '[LIVE] ' + home_team_emoji + ' ' + fixture['homeTeamName'] + ' ' + str(result['goalsHomeTeam']) \
-                        + ' - ' + str(result['goalsAwayTeam']) + ' ' + fixture['awayTeamName'] + ' ' + away_team_emoji
-            text += '\n'
+                text += '[LIVE] ' + home_team_emoji + ' ' + fixture['homeTeamName'] + ' ' + str(result['goalsHomeTeam']) + ' - ' + str(result['goalsAwayTeam']) + ' ' + fixture['awayTeamName'] + ' ' + away_team_emoji
+                text += '\n'
         if text != "":
             return text
         else:
