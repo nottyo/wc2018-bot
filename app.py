@@ -82,6 +82,11 @@ def getFixtures():
     return requests.get('http://sport.trueid.net/worldcup/get_all_match')
 
 
+def get_fixtures():
+    url = wc_api + '/fixtures'
+    return requests.get(url, headers=wc_api_headers)
+
+
 def getTeam(team_name):
     detect = translator.detect(team_name)
     if detect.lang != 'en':
@@ -103,21 +108,24 @@ def getTeam(team_name):
 
 
 def handle_worldcup_results():
-    response = getFixtures()
+    response = get_fixtures()
     if response.status_code == 200:
         json = response.json()
         text = ""
         for fixture in json['fixtures']:
             if fixture['status'] == 'FINISHED':
                 result = fixture['result']
-                text += '[FT] ' + fixture['homeTeamName'] + ' ' + str(result['goalsHomeTeam']) + ' - ' + str(result['goalsAwayTeam']) + ' ' + fixture['awayTeamName']
+                home_team_emoji = get_country_emoji(fixture['homeTeamName'])
+                away_team_emoji = get_country_emoji(fixture['awayTeamName'])
+                text += '[FT] ' + home_team_emoji + ' ' + fixture['homeTeamName'] + ' ' + str(result['goalsHomeTeam']) \
+                        + ' - ' + str(result['goalsAwayTeam']) + ' ' + fixture['awayTeamName'] + ' ' + away_team_emoji
                 text += '\n' 
         return text    
     return None
 
 
 def handle_yesterday_results():
-    response = getFixtures()
+    response = get_fixtures()
     if response.status_code == 200:
         json = response.json()
         text = ""
@@ -126,22 +134,28 @@ def handle_yesterday_results():
             dt=datetime.strptime(fixture['date'],'%Y-%m-%dT%H:%M:%SZ').date()
             if fixture['status'] == 'FINISHED' and yesterday == dt:
                 result = fixture['result']
-                text += '[FT] ' + fixture['homeTeamName'] + ' ' + str(result['goalsHomeTeam']) + ' - ' + str(result['goalsAwayTeam']) + ' ' + fixture['awayTeamName']
-                text += '\n' 
+                home_team_emoji = get_country_emoji(fixture['homeTeamName'])
+                away_team_emoji = get_country_emoji(fixture['awayTeamName'])
+                text += '[FT] ' + home_team_emoji + ' ' + fixture['homeTeamName'] + ' ' + str(result['goalsHomeTeam']) \
+                        + ' - ' + str(result['goalsAwayTeam']) + ' ' + fixture['awayTeamName'] + ' ' + away_team_emoji
+            text += '\n'
         return text    
     return None
 
 
 def handle_live_score():
-    response = getFixtures()
+    response = get_fixtures()
     if response.status_code == 200:
         json = response.json()
         text = ""
         for fixture in json['fixtures']:
             if fixture['status'] == 'IN_PLAY':
                 result = fixture['result']
-                text += '[LIVE] ' + fixture['homeTeamName'] + ' ' + str(result['goalsHomeTeam']) + ' - ' + str(result['goalsAwayTeam']) + ' ' + fixture['awayTeamName']
-                text += '\n' 
+                home_team_emoji = get_country_emoji(fixture['homeTeamName'])
+                away_team_emoji = get_country_emoji(fixture['awayTeamName'])
+                text += '[LIVE] ' + home_team_emoji + ' ' + fixture['homeTeamName'] + ' ' + str(result['goalsHomeTeam']) \
+                        + ' - ' + str(result['goalsAwayTeam']) + ' ' + fixture['awayTeamName'] + ' ' + away_team_emoji
+            text += '\n'
         if text != "":
             return text
         else:
@@ -175,7 +189,7 @@ def handle_fixtures():
             text += key.strftime("%A %d %B %Y") + "\n"
             for value in values:
                 text += value + "\n"
-            text += "===================================\n\n"
+            text += "==========================\n\n"
         return text
     return None
 
@@ -205,7 +219,7 @@ def handle_today_fixtures():
 
 
 def handle_today_results():
-    response = getFixtures()
+    response = get_fixtures()
     if response.status_code == 200:
         json = response.json()
         text = ""
@@ -214,8 +228,12 @@ def handle_today_results():
             if dt.date() == date.today():
                 if fixture['status'] == 'FINISHED':
                     result = fixture['result']
-                    text += '[FT] ' + fixture['homeTeamName'] + ' ' + str(result['goalsHomeTeam']) + ' - ' + str(result['goalsAwayTeam']) + ' ' + fixture['awayTeamName']
-                    text += '\n' 
+                    home_team_emoji = get_country_emoji(fixture['homeTeamName'])
+                    away_team_emoji = get_country_emoji(fixture['awayTeamName'])
+                    text += '[FT] ' + home_team_emoji + ' ' + fixture['homeTeamName'] + ' ' + str(
+                        result['goalsHomeTeam']) + ' - ' + str(result['goalsAwayTeam']) + ' ' + fixture[
+                                'awayTeamName'] + ' ' + away_team_emoji
+                    text += '\n'
         if text != "":
             return text
         else:
