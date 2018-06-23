@@ -12,6 +12,9 @@ from linebot.exceptions import (
 )
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
+    FlexSendMessage, BubbleContainer, ImageComponent, BoxComponent,
+    TextComponent, SpacerComponent, IconComponent, ButtonComponent,
+    SeparatorComponent, CarouselContainer
 )
 
 app = Flask(__name__)
@@ -33,10 +36,12 @@ wc_api_key = os.getenv('FOOTBALL_API_KEY', None)
 wc_api_headers = {'X-Auth-Token': wc_api_key}
 
 ch = {
-    '207': 'True4U ช่อง 24 (SD)',
-    'da0': 'อัมรินทร์ทีวี ช่อง 34 (HD)',
-    'c05': 'ททบ. 5 ช่อง 1 (HD)'
+    '207': 'https://image.ibb.co/nP2WKo/True4U96.png',
+    'da0': 'https://image.ibb.co/jAN95T/amarin_no_margin.png',
+    'c05': 'https://image.ibb.co/j2ttX8/ch5.png'
 }
+
+wc_logo_url = 'https://vectors.pro/wp-content/uploads/2017/10/fifa-world-cup-2018-logo-vector.png'
 
 with open('countries_emoji.json') as f2:
     countries_emoji = json.load(f2)
@@ -164,54 +169,197 @@ def handle_fixtures():
     response = getFixtures()
     if response.status_code == 200:
         matches = response.json()
-        text = ""
-        data = {}
+        carousel_dict = {
+            'type': 'carousel',
+            'contents': []
+        }
+        data_bubble_dict = {}
         for match in matches:
-
             dt = datetime.strptime(match['match_start_date'], '%Y-%m-%d %H:%M:%S')
             dt_local = dt - timedelta(hours=7)
+            bubble_dict = {
+                'type': 'bubble',
+                'direction': 'ltr',
+                'body': {
+                    'type': 'box',
+                    'layout': 'vertical',
+                    'contents': [
+                        {
+                            'type': 'box',
+                            'layout': 'baseline',
+                            'contents': [
+                                {
+                                    'type': 'icon',
+                                    'url': wc_logo_url,
+                                    'size': '3xl'
+                                },
+                                {
+                                    'type': 'text',
+                                    'weight': 'bold',
+                                    'color': '#1DB446',
+                                    'size': 'md',
+                                    "text": dt_local.date().strftime('%A %d %B %Y')
+                                }
+                            ]
+                        },
+                        {
+                            'type': 'separator',
+                            'margin': 'sm'
+                        },
+                        {
+                            'type': 'box',
+                            'layout': 'vertical',
+                            'margin': 'sm',
+                            'spacing': 'sm',
+                            'contents': []
+                        }
+                    ]
+                }
+            }
             home_team_name = match['team_home_en']
             home_team_emoji = get_country_emoji(home_team_name)
             away_team_name = match['team_away_en']
             away_team_emoji = get_country_emoji(away_team_name)
-            match_text = home_team_emoji + ' ' + home_team_name + '  vs  ' + away_team_name + ' ' + away_team_emoji
-            match_text += '  ' + dt.strftime('%H:%M')
-            match_text += '  ' + ch[match['channel_code']]
-            if dt_local.date() not in data:
-                data[dt_local.date()] = [match_text]
+            team_match_text = home_team_emoji + match['team_home_th'] + ' vs ' + match['team_away_th'] + away_team_emoji
+            if dt_local.date() not in data_bubble_dict:
+                data_bubble_dict[dt_local.date()] = bubble_dict
+                bubble = bubble_dict
             else:
-                data[dt_local.date()].append(match_text)
+                bubble = data_bubble_dict[dt_local.date()]
 
-        for key, values in data.items():
-            text += key.strftime("%A %d %B %Y") + "\n"
-            for value in values:
-                text += value + "\n"
-            text += "==========================\n\n"
-        return text
+            bubble['body']['contents'][2]['contents'].append(
+                {
+                    'type': 'box',
+                    'layout': 'horizontal',
+                    'contents': [
+                        {
+                            'type': 'text',
+                            'text': team_match_text,
+                            'size': 'sm',
+                            'color': '#555555',
+                            'wrap': True,
+                            'flex': 9
+                        },
+                        {
+                            'type': 'text',
+                            'text': dt.strftime('%H:%M'),
+                            'size': 'sm',
+                            'color': '#555555',
+                            'flex': 0
+                        },
+                        {
+                            'type': 'image',
+                            'url': ch[match['channel_code']],
+                            'size': 'md',
+                            "margin": 'sm'
+                        }
+                    ]
+                }
+            )
+
+        for key, value in data_bubble_dict.items():
+            if len(carousel_dict['contents']) > 10:
+                break
+            carousel_dict['contents'].append(value)
+        return CarouselContainer.new_from_json_dict(carousel_dict)
+
     return None
 
 
 def handle_today_fixtures():
-    response = requests.get('http://sport.trueid.net/worldcup/get_all_match')
+    response = getFixtures()
+    found_fixtures = False
     if response.status_code == 200:
         matches = response.json()
-        text = ""
+        bubble_dict = {
+            'type': 'bubble',
+            'direction': 'ltr',
+            'body': {
+                'type': 'box',
+                'layout': 'vertical',
+                'contents': [
+                    {
+                        'type': 'box',
+                        'layout': 'baseline',
+                        'contents': [
+                            {
+                                'type': 'icon',
+                                'url': wc_logo_url,
+                                'size': '3xl'
+                            },
+                            {
+                                'type': 'text',
+                                'weight': 'bold',
+                                'color': '#1DB446',
+                                'size': 'xl',
+                                "text": "โปรแกรมวันนี้"
+                            }
+                        ]
+                    },
+                    {
+                        'type': 'text',
+                        'text': date.today().strftime('%A %d %B %Y')
+                    },
+                    {
+                        'type': 'separator',
+                        'margin': 'sm'
+                    },
+                    {
+                        'type': 'box',
+                        'layout': 'vertical',
+                        'margin': 'sm',
+                        'spacing': 'sm',
+                        'contents': []
+                    }
+                ]
+            }
+        }
         for match in matches:
             dt = datetime.strptime(match['match_start_date'], '%Y-%m-%d %H:%M:%S')
             dt_local = dt - timedelta(hours=7)
             if dt_local.date() == date.today():
+                found_fixtures = True
                 home_team_name = match['team_home_en']
                 home_team_emoji = get_country_emoji(home_team_name)
                 away_team_name = match['team_away_en']
                 away_team_emoji = get_country_emoji(away_team_name)
-                match_text = home_team_emoji + ' ' + home_team_name + '  vs  ' + away_team_name + ' ' + away_team_emoji
-                match_text += ' ' + dt.strftime('%H:%M')
-                match_text += ' ' + ch[match['channel_code']] + '\n'
-                text += match_text
-        if text is not "":
-            return text
+                team_match_text = home_team_emoji + match['team_home_th'] + ' vs ' + match['team_away_th'] + away_team_emoji
+                data_contents = bubble_dict['body']['contents'][3]['contents']
+                data_contents.append(
+                    {
+                        'type': 'box',
+                        'layout': 'horizontal',
+                        'contents': [
+                            {
+                                'type': 'text',
+                                'text': team_match_text,
+                                'size': 'xs',
+                                'color': '#555555',
+                                'wrap': True,
+                                'flex': 9
+                            },
+                            {
+                                'type': 'text',
+                                'text': dt.strftime('%H:%M'),
+                                'size': 'xs',
+                                'color': '#555555',
+                                'flex': 0
+                            },
+                            {
+                                'type': 'image',
+                                'url': ch[match['channel_code']],
+                                'size': 'sm',
+                                "margin": 'sm'
+                            }
+                        ]
+                    }
+                )
+        bubble = BubbleContainer.new_from_json_dict(bubble_dict)
+        if found_fixtures is True:
+            return bubble
         else:
             return "ไม่มีโปรแกรมสำหรับวันนี้ครับ"
+
     return None
 
 
@@ -293,8 +441,14 @@ def handle_message(event):
     if re.search('(นักเตะทีมชาติ|นักเตะของ)([\w\W\s]+)', text):
         m = re.search('(นักเตะทีมชาติ|นักเตะของ)([\w\W\s]+)', text)
         result = handle_team_players(m.group(2))
-    print(result)
     if result is not None:
+        if isinstance(result, BubbleContainer) or isinstance(result, CarouselContainer):
+            message = FlexSendMessage(alt_text="รบกวนดูข้อความบนมือถือของท่านนะครับ", contents=result)
+            line_bot_api.reply_message(
+                event.reply_token,
+                message
+            )
+        else:
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=result))
