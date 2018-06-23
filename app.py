@@ -35,10 +35,16 @@ wc_api = 'http://api.football-data.org/v1/competitions/467'
 wc_api_key = os.getenv('FOOTBALL_API_KEY', None)
 wc_api_headers = {'X-Auth-Token': wc_api_key}
 
+# ch = {
+#     '207': 'https://image.ibb.co/nP2WKo/True4U96.png',
+#     'da0': 'https://image.ibb.co/jAN95T/amarin_no_margin.png',
+#     'c05': 'https://image.ibb.co/j2ttX8/ch5.png'
+# }
+
 ch = {
-    '207': 'https://image.ibb.co/nP2WKo/True4U96.png',
-    'da0': 'https://image.ibb.co/jAN95T/amarin_no_margin.png',
-    'c05': 'https://image.ibb.co/j2ttX8/ch5.png'
+    '207': 'https://fn.dmpcdn.com/TrueIDWeb/Sport/True4U.png',
+    'da0': 'https://fn.dmpcdn.com/TrueIDWeb/Sport/amarintv-hd.png',
+    'c05': 'https://fn.dmpcdn.com/TrueIDWeb/Sport/ch5.png'
 }
 
 wc_logo_url = 'https://vectors.pro/wp-content/uploads/2017/10/fifa-world-cup-2018-logo-vector.png'
@@ -51,6 +57,18 @@ def get_country_emoji(country_name):
     for country in countries_emoji:
         if country['name'] == country_name:
             return country['emoji']
+
+
+def normalize_position_name(position_name):
+    if ' ' in position_name:
+        split = str(position_name).split(' ')
+        return (split[0][0] + split[1][0]).upper()
+    if '-' in position_name:
+        split = str(position_name).split('-')
+        return (split[0][0] + split[1][0]).upper()
+    if position_name == 'Keeper':
+        return 'GK'
+
 
 
 @app.route('/')
@@ -409,13 +427,84 @@ def handle_team_fixture(team_str):
 def handle_team_players(team_str):
     team_link = getTeam(team_str)
     if team_link is not None:
-        response = requests.get(team_link + '/players', headers=wc_api_headers)
-        if response.status_code == 200:
-            text = ""
-            json = response.json()
-            for player in json['players']:
-                text += player['name'] + '   | ' + player['position'] + ' | เบอร์ ' + str(player['jerseyNumber']) + "\n" 
-            return text
+        response_team = requests.get(team_link, headers=wc_api_headers)
+        team = response_team.json()
+        if response_team.status_code == 200:
+            response = requests.get(team_link + '/players', headers=wc_api_headers)
+            if response.status_code == 200:
+                bubble = {
+                    'type': 'bubble',
+                    'body': {
+                        'type': 'box',
+                        'layout': 'vertical',
+                        'contents': [
+                            {
+                                'type': 'box',
+                                'layout': 'horizontal',
+                                'margin': 'sm',
+                                'spacing': 'sm',
+                                'contents': [
+                                    {
+                                        'type': 'image',
+                                        'url': team['crestUrl'],
+                                        'size': 'xxs',
+                                        'align': 'start',
+                                        'flex': 0
+                                    },
+                                    {
+                                        'type': 'text',
+                                        'text': team['name'].upper(),
+                                        'weight': 'bold',
+                                        'size': 'xxl'
+                                    }
+                                ]
+                            },
+                            {
+                                'type': 'separator',
+                                'margin': 'xs'
+                            },
+                            {
+                                'type': 'box',
+                                'layout': 'vertical',
+                                'contents': []
+                            }
+                        ]
+                    }
+                }
+                json = response.json()
+                for player in json['players']:
+                    if player['jerseyNumber'] is None:
+                        player['jerseyNumber'] = 0
+
+                players_sorted = sorted(json['players'], key=lambda key: key['jerseyNumber'])
+                player_contents = bubble['body']['contents'][2]['contents']
+                for player in players_sorted:
+                    player_info = player['name'] + ' (' + normalize_position_name(player['position']) + ')'
+                    player_contents.append(
+                        {
+                            'type': 'box',
+                            'layout': 'horizontal',
+                            'margin': 'sm',
+                            'spacing': 'sm',
+                            'contents': [
+                                {
+                                    'type': 'text',
+                                    'text': str(player['jerseyNumber']) + '.',
+                                    'size': 'xs',
+                                    'color': '#555555',
+                                    'flex': 0
+                                },
+                                {
+                                    'type': 'text',
+                                    'text': player_info,
+                                    'size': 'xs',
+                                    'color': '#555555'
+                                }
+                            ]
+                        }
+                    )
+                return BubbleContainer.new_from_json_dict(bubble)
+
     return "ทีม {} ไม่ได้เข้าร่วมในฟุตบอลโลกนะครับ".format(team_str)
 
 
