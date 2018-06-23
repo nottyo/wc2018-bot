@@ -49,6 +49,32 @@ ch = {
 
 wc_logo_url = 'https://vectors.pro/wp-content/uploads/2017/10/fifa-world-cup-2018-logo-vector.png'
 
+fifa_api = 'https://api.fifa.com/api/v1/calendar/matches?idCompetition=17&idSeason=254645&count=500&language=en'
+fifa_match_event_api = 'https://api.fifa.com/api/v1/timelines/17/254645/{0}/{1}?language=en'
+fifa_player_api = 'https://api.fifa.com/api/v1/players/{0}'
+
+# # Match Statuses
+MATCH_STATUS_FINISHED = 0
+MATCH_STATUS_NOT_STARTED = 1
+MATCH_STATUS_LIVE = 3
+MATCH_STATUS_PREMATCH = 12 # Maybe?
+# Event Types
+EVENT_GOAL = 0
+EVENT_YELLOW_CARD = 2
+EVENT_SECOND_YELLOW_CARD_RED = 3 # Maybe?
+EVENT_STRAIGHT_RED = 4 # Maybe?
+EVENT_PERIOD_START = 7
+EVENT_PERIOD_END = 8
+EVENT_OWN_GOAL = 34
+EVENT_FREE_KICK_GOAL = 39
+EVENT_PENALTY_GOAL = 41
+EVENT_PENALTY_SAVED = 60
+EVENT_PENALTY_MISSED = 65
+EVENT_FOUL_PENALTY = 72
+# Periods
+PERIOD_1ST_HALF = 3
+PERIOD_2ND_HALF = 5
+
 with open('countries_emoji.json') as f2:
     countries_emoji = json.load(f2)
 
@@ -70,6 +96,27 @@ def normalize_position_name(position_name):
         return 'GK'
 
 
+def get_fifa_matches():
+    response = requests.get(fifa_api)
+    return response
+
+
+def get_fifa_match_events(stage_id, match_id):
+    response = requests.get(fifa_match_event_api.format(stage_id, match_id))
+    if response.status_code == 200:
+        return response.json()['Event']
+    return None
+
+
+def get_fifa_player_name(player_id):
+    response = requests.get(fifa_player_api.format(player_id))
+    if response.status_code == 200:
+        json = response.json()
+        name = json['Name'][0]['Description']
+        split = str(name).split(' ')
+        name = split[0][0] + '.' + split[1].title()
+        return name
+    return None
 
 @app.route('/')
 def homepage():
@@ -165,21 +212,172 @@ def handle_yesterday_results():
 
 
 def handle_live_score():
-    response = get_fixtures()
+    response = get_fifa_matches()
+    text = ''
+    bubble = {
+        'type': 'bubble',
+        'body': {
+            'type': 'box',
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "box",
+                    "layout": "horizontal",
+                    "margin": "sm",
+                    "contents": [
+                        {
+                            "type": "image",
+                            "url": "https://vectors.pro/wp-content/uploads/2017/10/fifa-world-cup-2018-logo-vector.png",
+                            "size": "xxs",
+                            "flex": 0
+                        },
+                        {
+                            "type": "text",
+                            "text": "ผลบอลสด",
+                            "weight": "bold",
+                            "color": "#ff2f00",
+                            "size": "xl"
+                        }
+                    ]
+                },
+                {
+                    "type": "separator",
+                    "margin": "md"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "margin": "sm",
+                    "contents": []
+                }
+            ]
+        }
+    }
     if response.status_code == 200:
-        json = response.json()
-        text = ""
-        for fixture in json['fixtures']:
-            if fixture['status'] == 'IN_PLAY':
-                result = fixture['result']
-                home_team_emoji = get_country_emoji(fixture['homeTeamName'])
-                away_team_emoji = get_country_emoji(fixture['awayTeamName'])
-                text += '[LIVE] ' + home_team_emoji + ' ' + fixture['homeTeamName'] + ' ' + str(result['goalsHomeTeam']) + ' - ' + str(result['goalsAwayTeam']) + ' ' + fixture['awayTeamName'] + ' ' + away_team_emoji
-                text += '\n'
-        if text != "":
-            return text
-        else:
-            return "ไม่มีบอลเตะตอนนี้นะครับ"
+        matches_results = response.json()['Results']
+        for match in matches_results:
+            # if match['MatchStatus'] == MATCH_STATUS_PREMATCH:
+            bubble_contents = bubble['body']['contents'][2]['contents']
+            if match['MatchStatus'] == MATCH_STATUS_LIVE:
+                match_id = match['IdMatch']
+                match_stage_id = match['IdStage']
+                home_team = match['Home']
+                home_team_id = str(home_team['IdTeam'])
+                home_score = str(home_team['Score'])
+                home_name = home_team['TeamName'][0]['Description']
+                home_emoji = get_country_emoji(home_name)
+                away_team = match['Away']
+                away_score = str(away_team['Score'])
+                away_name = away_team['TeamName'][0]['Description']
+                away_emoji = get_country_emoji(away_name)
+                text += home_emoji + home_name + ' ' + home_score + ' - ' + away_score + ' ' + away_name + away_emoji + '\n'
+                events = get_fifa_match_events(match_stage_id, match_id)
+                print('match_stage: {}, id: {}'.format(match_stage_id, match_id))
+
+                event_contents = []
+                event_contents.append(
+                    {
+                        "type": "text",
+                        "text": "{0} {1} {2} - {3} {4} {5}".format(home_emoji, home_name, home_score,
+                                                                         away_score, away_name, away_emoji),
+                        "color": "#555555",
+                        "size": "xs"
+                    }
+                )
+                if events is not None:
+                    for event in events:
+                        if event['Type'] == EVENT_GOAL or event['Type'] == EVENT_FREE_KICK_GOAL:
+                            team_id = event['IdTeam']
+                            player_id = event['IdPlayer']
+                            match_min = str(event['MatchMinute']).replace("\"", "")
+                            player_name = get_fifa_player_name(player_id)
+                            if team_id == home_team_id:
+                                text += home_emoji + match_min + ' ' + player_name + '\n'
+                                event_contents.append(
+                                    {
+                                        'type': 'text',
+                                        'text': '{0} {1}{2}'.format(home_emoji, match_min, player_name),
+                                        'color': '#6f7175',
+                                        'size': 'xxs'
+                                    }
+                                )
+                            else:
+                                text += away_emoji + match_min + ' ' + player_name + '\n'
+                                event_contents.append(
+                                    {
+                                        'type': 'text',
+                                        'text': '{0} {1}{2}'.format(away_emoji, match_min, player_name),
+                                        'color': '#6f7175',
+                                        'size': 'xxs'
+                                    }
+                                )
+                        if event['Type'] == EVENT_PENALTY_GOAL:
+                            team_id = event['IdTeam']
+                            player_id = event['IdPlayer']
+                            match_min = str(event['MatchMinute']).replace("\"", "")
+                            player_name = get_fifa_player_name(player_id)
+                            if team_id == home_team_id:
+                                text += home_emoji + match_min + ' ' + player_name + '(Pen)\n'
+                                event_contents.append(
+                                    {
+                                        'type': 'text',
+                                        'text': '{0} {1}{2}'.format(home_emoji, match_min, player_name + '(Pen)'),
+                                        'color': '#6f7175',
+                                        'size': 'xxs'
+                                    }
+                                )
+                            else:
+                                text += away_emoji + match_min + ' ' + player_name + '(Pen)\n'
+                                event_contents.append(
+                                    {
+                                        'type': 'text',
+                                        'text': '{0} {1}{2}'.format(away_emoji, match_min, player_name + '(Pen)'),
+                                        'color': '#6f7175',
+                                        'size': 'xxs'
+                                    }
+                                )
+                        if event['Type'] == EVENT_OWN_GOAL:
+                            team_id = event['IdTeam']
+                            player_id = event['IdPlayer']
+                            match_min = str(event['MatchMinute']).replace("\"", "")
+                            player_name = get_fifa_player_name(player_id)
+                            if team_id == home_team_id:
+                                text += home_emoji + match_min + ' ' + player_name + '(OG)\n'
+                                event_contents.append(
+                                    {
+                                        'type': 'text',
+                                        'text': '{0} {1}{2}'.format(home_emoji, match_min, player_name + '(O.G.)'),
+                                        'color': '#6f7175',
+                                        'size': 'xxs'
+                                    }
+                                )
+                            else:
+                                text += away_emoji + match_min + ' ' + player_name + '(OG)\n'
+                                event_contents.append(
+                                    {
+                                        'type': 'text',
+                                        'text': '{0} {1}{2}'.format(away_emoji, match_min, player_name + '(O.G.)'),
+                                        'color': '#6f7175',
+                                        'size': 'xxs'
+                                    }
+                                )
+
+                bubble_contents.append(
+                    {
+                        'type': 'box',
+                        'layout': 'vertical',
+                        'margin': 'sm',
+                        'contents': event_contents
+                    }
+                )
+                bubble_contents.append(
+                    {
+                        'type': 'separator',
+                        'margin': 'sm'
+                    }
+                )
+        print(text)
+        return BubbleContainer.new_from_json_dict(bubble)
     return None
 
 
