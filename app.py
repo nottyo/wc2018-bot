@@ -212,6 +212,7 @@ def handle_yesterday_results():
 
 
 def handle_live_score():
+    is_live = False
     response = get_fifa_matches()
     text = ''
     bubble = {
@@ -259,6 +260,7 @@ def handle_live_score():
             # if match['MatchStatus'] == MATCH_STATUS_PREMATCH:
             bubble_contents = bubble['body']['contents'][2]['contents']
             if match['MatchStatus'] == MATCH_STATUS_LIVE:
+                is_live = True
                 match_id = match['IdMatch']
                 match_stage_id = match['IdStage']
                 home_team = match['Home']
@@ -376,8 +378,10 @@ def handle_live_score():
                         'margin': 'sm'
                     }
                 )
-        print(text)
-        return BubbleContainer.new_from_json_dict(bubble)
+        if is_live is True:
+            return BubbleContainer.new_from_json_dict(bubble)
+        else:
+            return "ไม่มีบอลเตะตอนนี้นะครับ"
     return None
 
 
