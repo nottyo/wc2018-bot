@@ -1,19 +1,15 @@
 language: python
 python:
-  - 3.6
-
-install: 
-  - pip install -r requirements.txt
-
+- 3.6
+install:
+- pip install -r requirements.txt
 script:
-  - python -m unittest discover
-    
+- python -m unittest discover
 branches:
   only:
-    - master
-
+  - master
 deploy:
   provider: heroku
   api_key:
-    secure: HfS9FwFqUDpzVciVezXmAEaVb6JjXcZqEQg0kLfzLP6UR2efYSKzFO4TKratAqe2W/Q0dJp7OOanwqd1wf5Mw1raVy7X90JTFl8ZLPNtnXjkGt2TGWcPu9KA8357ApfbxLiC/DZ48xN+6fg6tyUHmeki6OTVY6FBTWXnzj3U2wTmS0mNtjewlypuz4j/VqxXu5bRkJalePBRANxgmuGvqCi/Gff2t0c5mJIWb+ftbw/0ARWANgHvYaKN3xudj7gM4MofDMwyX6KuKHl7IW+rH9+SAPy9OYHvhUT25qXmcw1aJJQ50yIUeERKRe/3huF9A011jbpVyPfEUghPhWTgv6yJX+x1Y+L7CW+vBTz/hcZb762Wuocju4V2yPqn+eupa5Vs9dQVmKqqpbsA7l5ptK/QDz0zn2Jed4JcgG1HYAgqSddlRpnvnkWK5fvOmNpV0kbQKJVeg2QVPej2IvCRJUPeV0CboaMAWVN/4y8tt91pjfn1egTdwStYvlHc1j8sfLDCNkZ/1egNjzswG8QDZ8GhXNAirkHVFnU5EG8PKbmGGOxtnmafyQpXv8oMyRW34rPK9uc7KBDutcU2R/JgsK2L0uoaWPzBBbnVesOCuk/Bz41I2YXeDYLpgf45XoWLgUnojULjPwUU/zubkBC48i2COVMkIcOQFEV8gbq+T04=
-  app: wc2018-bot  
+    secure: sc/EvRxDwjvBJ+1PgJJGe6o5F+/s6VOVLjKFRqIy0umfPh8DrBVn1OqTiI7AZSfQX9VT0g7gj03HVFE38ZpVIwlgPsn2pHLQoVOFgNxr0VOObfS/3GHCPh1664t682VJlLavCVD4dxzbxUspypplK5p4e16jAfSDPc0v/Ubnd234WPZQM8TrrqmnL3C4U7Bz4/8Ai7VRpEbONn1tmZVE6qXSh2PsidhEa2KutQEC0ATyf5DKXTyC7DpiZdik0h8o3rc0kk4XHRJ/Ji9rtu4rI8atq0/4ZWDhBeMrGXdYs504uzefeiTvcocZHlX93gI3uRillyAOVwS483QK/OTtVVRjfw22xXkORJiJohBh1T/CMh0pWiRbcfjcYGxxYnHWB/zL7uEtwCzuFQ7jeCM2vAKOwUhzRPZuCWX02Blc6jmxxtuGuwNeYRxEz7UPvSLXASBpGlvJmesehJaOUUaxVbs607Rlgn58RwS/McbfwzGt32OfMuqEBTheZO4Q9WsSCMpJFJJTdzWmUIFRUKPJqjfxUrFHqYorQwZJOGRwRM8911rTlrDyPsQauTaUeeUeB/2YM7iNvglBBTCC0U3llLGPXpNjYW7Hy2cHIo/xy/OcizRskNsjyOCqgrw/hXNtNw3R/2qNQwywh5uWD+Kw+1O4T9d6eFX1qgsWa/bSEGQ=
+  app: wc2018-bot
