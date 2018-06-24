@@ -4,6 +4,7 @@ from flask import Flask, request, abort
 from googletrans import Translator
 from live import live_bp
 import requests
+from urllib import parse
 from linebot import (
     LineBotApi, WebhookHandler
 )
@@ -14,7 +15,7 @@ from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
     FlexSendMessage, BubbleContainer, ImageComponent, BoxComponent,
     TextComponent, SpacerComponent, IconComponent, ButtonComponent,
-    SeparatorComponent, CarouselContainer
+    SeparatorComponent, CarouselContainer, SourceGroup, SourceUser, SourceRoom
 )
 
 app = Flask(__name__)
@@ -52,6 +53,21 @@ wc_logo_url = 'https://vectors.pro/wp-content/uploads/2017/10/fifa-world-cup-201
 fifa_api = 'https://api.fifa.com/api/v1/calendar/matches?idCompetition=17&idSeason=254645&count=500&language=en'
 fifa_match_event_api = 'https://api.fifa.com/api/v1/timelines/17/254645/{0}/{1}?language=en'
 fifa_player_api = 'https://api.fifa.com/api/v1/players/{0}'
+
+fantasy_cookie_fifa_007='640063004900520048006500620047004B006B004E00590077004D0069004F0056006B00590056006F00770039007A' \
+                        '0057006F0071006C0041006F00660079006B0042006F00730042006E0038005A006700540038004500480059006A0' \
+                        '04D0058005400470037004800630075005A0039006B005400660038006D0062006D00510047004C00320073007700' \
+                        '4C004700520041005A0071007A0063007500660031007000610061005800530057006B006E00490048004F006A007' \
+                        '70039007300510077004F0069006600560055006200470077007800740036007900580038002F005100300067004300' \
+                        '66005400390056002B006E004B005100710072006A00480072007700780070006A006D004E003200410078004E0079' \
+                        '006F0056005A0043004F004E00300044005600660054004E006500300042006800660051004500700047006600680' \
+                        '0660061004A006400380067006B003D00'
+fantasy_cookie_fifa_raw='{"UserId":108570305,"GUID":"1625d134-6f74-11e8-aa92-16e9a17aa0c6","FullName":"nottyo",' \
+                        '"CountryId":"847265","FavTeamId":"43948","HasTeam":"1","HasDreamTeam":"0","TeamName":"nottyo",' \
+                        '"CountryName":"Thailand","FavTeamName":"Germany","CurrentGamedayId":"1","CurrentPhaseId":"1",' \
+                        '"IsTourActive":"1","SocialBadge":"0","TeamNameTrans":{"EN":"Germany","FR":"Germany",' \
+                        '"RU":"Germany","ES":"Germany","DE":"Germany"},"CountryNameTrans":{"EN":"Thailand",' \
+                        '"FR":"Thailand","RU":"Thailand","ES":"Thailand","DE":"Thailand"}}'
 
 # # Match Statuses
 MATCH_STATUS_FINISHED = 0
@@ -710,6 +726,105 @@ def handle_team_players(team_str):
     return "ทีม {} ไม่ได้เข้าร่วมในฟุตบอลโลกนะครับ".format(team_str)
 
 
+def get_fantasy_league_table(event):
+    domain = '.fifa.com'
+    jar = requests.cookies.RequestsCookieJar()
+    jar.set('FIFA_007', fantasy_cookie_fifa_007, domain=domain, path='/')
+    jar.set('FIFA_RAW', fantasy_cookie_fifa_raw, domain=domain, path='/')
+    if isinstance(event.source, SourceGroup):
+        print('group_id: {}'.format(event.source.group_id))
+    if isinstance(event.source, SourceUser):
+        print('user_id: {}'.format(event.source.user_id))
+    if isinstance(event.source, SourceRoom):
+        print('room_id: {}'.format(event.source.room_id))
+    headers = {
+        'entity': 'ed0t4n$3!',
+        'User-Agent': 'fantasy-android'
+    }
+    response = requests.get('https://fantasy.fifa.com/services/api/leagues/190138/leagueleaderboard?'
+                            'optType=1&vPageNo=1&vPageChunk=25&vTopNo=25&vPhaseId=0&gamedayId=1&buster=default',
+                            cookies=jar, headers=headers)
+    if response.status_code == 200:
+        json = response.json()['Data']['Value']
+        bubble = {
+            'type': 'bubble',
+            'body': {
+                'type': 'box',
+                'layout': 'vertical',
+                'contents': [
+                    {
+                        "type": "text",
+                        "text": "World Cup 2018 Fantasy Football",
+                        "weight": "bold",
+                        "color": "#4286f4",
+                        "size": "xs"
+                    },
+                    {
+                        "type": "text",
+                        "text": parse.unquote(json['LeagueName']),
+                        "weight": "bold",
+                        "size": "xxl",
+                        "margin": "md"
+                    },
+                    {
+                        "type": "text",
+                        "text": "Update: {}".format(datetime.now().strftime('%d %B %Y %H:%M:%S')),
+                        "size": "xs",
+                        "color": "#aaaaaa",
+                        "wrap": True
+                    },
+                    {
+                        "type": "separator",
+                        "margin": "xxl"
+                    },
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "margin": "xxl",
+                        "spacing": "sm",
+                        "contents": []
+                    }
+                ]
+            }
+        }
+        team_contents = bubble['body']['contents'][4]['contents']
+        for team in json['Rest']:
+            team_contents.append(
+                {
+                    'type': 'box',
+                    'layout': 'horizontal',
+                    'spacing': 'md',
+                    'contents': [
+                        {
+                            'type': 'text',
+                            'text': '#' + team['Rank'],
+                            'size': 'sm',
+                            'flex': 0,
+                            "color": "#555555",
+                            'weight': 'bold'
+                        },
+                        {
+                            'type': 'text',
+                            'text': parse.unquote(team['TeamName']),
+                            'size': 'sm',
+                            "color": "#555555",
+                            'wrap': True,
+                            'weight': 'bold'
+                        },
+                        {
+                            'type': 'text',
+                            'text': '{0} ({1})'.format(team['OverallPoints'], team['CurrentGamedayPoints']),
+                            'weight': 'bold',
+                            'size': 'sm',
+                            'align': 'end'
+                        }
+                    ]
+                }
+            )
+        return BubbleContainer.new_from_json_dict(bubble)
+    return None
+
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     text = event.message.text
@@ -732,6 +847,8 @@ def handle_message(event):
     if re.search('(นักเตะทีมชาติ|นักเตะของ)([\w\W\s]+)', text):
         m = re.search('(นักเตะทีมชาติ|นักเตะของ)([\w\W\s]+)', text)
         result = handle_team_players(m.group(2))
+    if 'fantasy' in text or 'แฟนตาซี' in text:
+        result = get_fantasy_league_table(event)
     if result is not None:
         if isinstance(result, BubbleContainer) or isinstance(result, CarouselContainer):
             message = FlexSendMessage(alt_text="รบกวนดูข้อความบนมือถือของท่านนะครับ", contents=result)
