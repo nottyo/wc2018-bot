@@ -5,3 +5,5 @@ gunicorn==19.8.1
 requests==2.19.1
 codecov==2.0.15
 googletrans==2.3.0
+redis==2.10.6
+dateutils==0.6.6

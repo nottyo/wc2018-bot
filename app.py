@@ -9,7 +9,7 @@ from linebot import (
     LineBotApi, WebhookHandler
 )
 from linebot.exceptions import (
-    InvalidSignatureError
+    InvalidSignatureError, LineBotApiError
 )
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
@@ -135,6 +135,9 @@ def get_fifa_player_name(player_id):
     if response.status_code == 200:
         json = response.json()
         name = json['Name'][0]['Description']
+        if '  ' in name:
+            split = str(name).split('  ')
+            return split[0][0] + '.' + split[1].title()
         split = str(name).split(' ')
         name = split[0][0] + '.' + split[1].title()
         return name
@@ -315,8 +318,8 @@ def handle_live_score():
                             player_id = event['IdPlayer']
                             match_min = str(event['MatchMinute']).replace("\"", "")
                             player_name = get_fifa_player_name(player_id)
+                            print("name: {} id: {}".format(player_name, player_id))
                             if team_id == home_team_id:
-                                text += home_emoji + match_min + ' ' + player_name + '\n'
                                 event_contents.append(
                                     {
                                         'type': 'text',
@@ -326,7 +329,6 @@ def handle_live_score():
                                     }
                                 )
                             else:
-                                text += away_emoji + match_min + ' ' + player_name + '\n'
                                 event_contents.append(
                                     {
                                         'type': 'text',
@@ -341,7 +343,6 @@ def handle_live_score():
                             match_min = str(event['MatchMinute']).replace("\"", "")
                             player_name = get_fifa_player_name(player_id)
                             if team_id == home_team_id:
-                                text += home_emoji + match_min + ' ' + player_name + '(Pen)\n'
                                 event_contents.append(
                                     {
                                         'type': 'text',
@@ -351,7 +352,6 @@ def handle_live_score():
                                     }
                                 )
                             else:
-                                text += away_emoji + match_min + ' ' + player_name + '(Pen)\n'
                                 event_contents.append(
                                     {
                                         'type': 'text',
@@ -382,6 +382,54 @@ def handle_live_score():
                                         'type': 'text',
                                         'text': '{0} {1}{2}'.format(away_emoji, match_min, player_name + '(O.G.)'),
                                         'color': '#6f7175',
+                                        'size': 'xxs'
+                                    }
+                                )
+                        if event['Type'] == EVENT_YELLOW_CARD:
+                            team_id = event['IdTeam']
+                            player_id = event['IdPlayer']
+                            match_min = str(event['MatchMinute']).replace("\"", "")
+                            player_name = get_fifa_player_name(player_id)
+                            if team_id == home_team_id:
+                                event_contents.append(
+                                    {
+                                        'type': 'text',
+                                        'text': '{0} {1}{2}'.format(home_emoji, match_min, player_name),
+                                        'color': '#edd60e',
+                                        'size': 'xxs'
+                                    }
+                                )
+                            else:
+                                text += away_emoji + match_min + ' ' + player_name + '(OG)\n'
+                                event_contents.append(
+                                    {
+                                        'type': 'text',
+                                        'text': '{0} {1}{2}'.format(away_emoji, match_min, player_name),
+                                        'color': '#edd60e',
+                                        'size': 'xxs'
+                                    }
+                                )
+                        if event['Type'] == EVENT_STRAIGHT_RED or event['Type'] == EVENT_SECOND_YELLOW_CARD_RED:
+                            team_id = event['IdTeam']
+                            player_id = event['IdPlayer']
+                            match_min = str(event['MatchMinute']).replace("\"", "")
+                            player_name = get_fifa_player_name(player_id)
+                            if team_id == home_team_id:
+                                event_contents.append(
+                                    {
+                                        'type': 'text',
+                                        'text': '{0} {1}{2}'.format(home_emoji, match_min, player_name),
+                                        'color': '#ff0000',
+                                        'size': 'xxs'
+                                    }
+                                )
+                            else:
+                                text += away_emoji + match_min + ' ' + player_name + '(OG)\n'
+                                event_contents.append(
+                                    {
+                                        'type': 'text',
+                                        'text': '{0} {1}{2}'.format(away_emoji, match_min, player_name),
+                                        'color': '#ff0000',
                                         'size': 'xxs'
                                     }
                                 )
@@ -871,7 +919,7 @@ def handle_message(event):
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=result))
-    
+
 
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=True)
