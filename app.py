@@ -731,12 +731,6 @@ def get_fantasy_league_table(event):
     jar = requests.cookies.RequestsCookieJar()
     jar.set('FIFA_007', fantasy_cookie_fifa_007, domain=domain, path='/')
     jar.set('FIFA_RAW', fantasy_cookie_fifa_raw, domain=domain, path='/')
-    if isinstance(event.source, SourceGroup):
-        print('group_id: {}'.format(event.source.group_id))
-    if isinstance(event.source, SourceUser):
-        print('user_id: {}'.format(event.source.user_id))
-    if isinstance(event.source, SourceRoom):
-        print('room_id: {}'.format(event.source.room_id))
     headers = {
         'entity': 'ed0t4n$3!',
         'User-Agent': 'fantasy-android'
@@ -828,6 +822,12 @@ def get_fantasy_league_table(event):
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     text = event.message.text
+    if isinstance(event.source, SourceGroup):
+        print('group_id: {}'.format(event.source.group_id))
+    if isinstance(event.source, SourceUser):
+        print('user_id: {}'.format(event.source.user_id))
+    if isinstance(event.source, SourceRoom):
+        print('room_id: {}'.format(event.source.room_id))
     result = None
     if 'ผลบอล' in text:
         result = handle_worldcup_results()
