@@ -48,6 +48,12 @@ ch = {
     'c05': 'https://fn.dmpcdn.com/TrueIDWeb/Sport/ch5.png'
 }
 
+fantasy_id = {
+    'C349af0103b66fdac2df2924d3f410f92': '190138',
+    'R739b4ad5435d76094514efd1b2e43ae7': '198726',
+    'U826fdeef198fe30a18c98b8039dd8253': '190138'
+}
+
 wc_logo_url = 'https://vectors.pro/wp-content/uploads/2017/10/fifa-world-cup-2018-logo-vector.png'
 
 fifa_api = 'https://api.fifa.com/api/v1/calendar/matches?idCompetition=17&idSeason=254645&count=500&language=en'
@@ -735,99 +741,104 @@ def get_fantasy_league_table(event):
         'entity': 'ed0t4n$3!',
         'User-Agent': 'fantasy-android'
     }
-    response = requests.get('https://fantasy.fifa.com/services/api/leagues/190138/leagueleaderboard?'
-                            'optType=1&vPageNo=1&vPageChunk=25&vTopNo=25&vPhaseId=0&gamedayId=1&buster=default',
-                            cookies=jar, headers=headers)
-    if response.status_code == 200:
-        json = response.json()['Data']['Value']
-        bubble = {
-            'type': 'bubble',
-            'body': {
-                'type': 'box',
-                'layout': 'vertical',
-                'contents': [
-                    {
-                        "type": "text",
-                        "text": "World Cup 2018 Fantasy Football",
-                        "weight": "bold",
-                        "color": "#4286f4",
-                        "size": "xs"
-                    },
-                    {
-                        "type": "text",
-                        "text": parse.unquote(json['LeagueName']),
-                        "weight": "bold",
-                        "size": "xxl",
-                        "margin": "md"
-                    },
-                    {
-                        "type": "text",
-                        "text": "Update: {}".format(datetime.now().strftime('%d %B %Y %H:%M:%S')),
-                        "size": "xs",
-                        "color": "#aaaaaa",
-                        "wrap": True
-                    },
-                    {
-                        "type": "separator",
-                        "margin": "xxl"
-                    },
-                    {
-                        "type": "box",
-                        "layout": "vertical",
-                        "margin": "xxl",
-                        "spacing": "sm",
-                        "contents": []
-                    }
-                ]
-            }
-        }
-        team_contents = bubble['body']['contents'][4]['contents']
-        for team in json['Rest']:
-            team_contents.append(
-                {
+    league_id = None
+    if isinstance(event.source, SourceGroup):
+        if event.source.group_id in fantasy_id:
+            league_id = fantasy_id[event.source.group_id]
+    if isinstance(event.source, SourceUser):
+        if event.source.user_id in fantasy_id:
+            league_id = fantasy_id[event.source.user_id]
+    if isinstance(event.source, SourceRoom):
+        if event.source.room_id in fantasy_id:
+            league_id = fantasy_id[event.source.room_id]
+    if league_id is not None:
+        response = requests.get('https://fantasy.fifa.com/services/api/leagues/{0}/leagueleaderboard?'
+                            'optType=1&vPageNo=1&vPageChunk=25&vTopNo=25&vPhaseId=0&gamedayId=1&buster=default'.
+                                format(league_id), cookies=jar, headers=headers)
+        if response.status_code == 200:
+            json = response.json()['Data']['Value']
+            bubble = {
+                'type': 'bubble',
+                'body': {
                     'type': 'box',
-                    'layout': 'horizontal',
-                    'spacing': 'md',
+                    'layout': 'vertical',
                     'contents': [
                         {
-                            'type': 'text',
-                            'text': '#' + team['Rank'],
-                            'size': 'sm',
-                            'flex': 0,
-                            "color": "#555555",
-                            'weight': 'bold'
+                            "type": "text",
+                            "text": "World Cup 2018 Fantasy Football",
+                            "weight": "bold",
+                            "color": "#4286f4",
+                            "size": "xs"
                         },
                         {
-                            'type': 'text',
-                            'text': parse.unquote(team['TeamName']),
-                            'size': 'sm',
-                            "color": "#555555",
-                            'wrap': True,
-                            'weight': 'bold'
+                            "type": "text",
+                            "text": parse.unquote(json['LeagueName']),
+                            "weight": "bold",
+                            "size": "xxl",
+                            "margin": "md"
                         },
                         {
-                            'type': 'text',
-                            'text': '{0} ({1})'.format(team['OverallPoints'], team['CurrentGamedayPoints']),
-                            'weight': 'bold',
-                            'size': 'sm',
-                            'align': 'end'
+                            "type": "text",
+                            "text": "Update: {}".format(datetime.now().strftime('%d %B %Y %H:%M:%S')),
+                            "size": "xs",
+                            "color": "#aaaaaa",
+                            "wrap": True
+                        },
+                        {
+                            "type": "separator",
+                            "margin": "xxl"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "vertical",
+                            "margin": "xxl",
+                            "spacing": "sm",
+                            "contents": []
                         }
                     ]
                 }
-            )
-        return BubbleContainer.new_from_json_dict(bubble)
+            }
+            team_contents = bubble['body']['contents'][4]['contents']
+            for team in json['Rest']:
+                team_contents.append(
+                    {
+                        'type': 'box',
+                        'layout': 'horizontal',
+                        'spacing': 'md',
+                        'contents': [
+                            {
+                                'type': 'text',
+                                'text': '#' + team['Rank'],
+                                'size': 'sm',
+                                'flex': 0,
+                                "color": "#555555",
+                                'weight': 'bold'
+                            },
+                            {
+                                'type': 'text',
+                                'text': parse.unquote(team['TeamName']),
+                                'size': 'sm',
+                                "color": "#555555",
+                                'wrap': True,
+                                'weight': 'bold'
+                            },
+                            {
+                                'type': 'text',
+                                'text': '{0} ({1})'.format(team['OverallPoints'], team['CurrentGamedayPoints']),
+                                'weight': 'bold',
+                                'size': 'sm',
+                                'align': 'end'
+                            }
+                        ]
+                    }
+                )
+            return BubbleContainer.new_from_json_dict(bubble)
     return None
 
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     text = event.message.text
-    if isinstance(event.source, SourceGroup):
-        print('group_id: {}'.format(event.source.group_id))
-    if isinstance(event.source, SourceUser):
-        print('user_id: {}'.format(event.source.user_id))
-    if isinstance(event.source, SourceRoom):
-        print('room_id: {}'.format(event.source.room_id))
     result = None
     if 'ผลบอล' in text:
         result = handle_worldcup_results()
