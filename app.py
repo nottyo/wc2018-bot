@@ -43,6 +43,7 @@ wc_api_headers = {'X-Auth-Token': wc_api_key}
 # }
 
 ch = {
+    '': 'https://fn.dmpcdn.com/TrueIDWeb/Sport/ch5.png',
     '207': 'https://fn.dmpcdn.com/TrueIDWeb/Sport/True4U.png',
     'da0': 'https://fn.dmpcdn.com/TrueIDWeb/Sport/amarintv-hd.png',
     'c05': 'https://fn.dmpcdn.com/TrueIDWeb/Sport/ch5.png'
@@ -516,7 +517,6 @@ def handle_fixtures():
                 bubble = bubble_dict
             else:
                 bubble = data_bubble_dict[dt_local.date()]
-
             bubble['body']['contents'][2]['contents'].append(
                 {
                     'type': 'box',
@@ -626,7 +626,7 @@ def handle_today_fixtures():
                                 'size': 'xs',
                                 'color': '#555555',
                                 'wrap': True,
-                                'flex': 9
+                                'flex': 7
                             },
                             {
                                 'type': 'text',
@@ -639,7 +639,8 @@ def handle_today_fixtures():
                                 'type': 'image',
                                 'url': ch[match['channel_code']],
                                 'size': 'sm',
-                                "margin": 'sm'
+                                "margin": 'sm',
+                                "align": "end"
                             }
                         ]
                     }
