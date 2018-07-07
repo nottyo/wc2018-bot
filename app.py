@@ -51,7 +51,7 @@ ch = {
 
 fantasy_id = {
     'C349af0103b66fdac2df2924d3f410f92': '190138',
-    'R739b4ad5435d76094514efd1b2e43ae7': '198726',
+    'C13f565b10dc183d7456df7db54824fa4': '198726',
     'U826fdeef198fe30a18c98b8039dd8253': '190138'
 }
 
@@ -889,12 +889,12 @@ def get_fantasy_league_table(event):
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     text = event.message.text
-    if isinstance(event.source, SourceGroup):
-        print("GroupId: {}".format(event.source.group_id))
-    if isinstance(event.source, SourceRoom):
-        print("RoomId: {}".format(event.source.room_id))
-    if isinstance(event.source, SourceUser):
-        print("UserId: {}".format(event.source.user_id))
+    # if isinstance(event.source, SourceGroup):
+    #     print("GroupId: {}".format(event.source.group_id))
+    # if isinstance(event.source, SourceRoom):
+    #     print("RoomId: {}".format(event.source.room_id))
+    # if isinstance(event.source, SourceUser):
+    #     print("UserId: {}".format(event.source.user_id))
 
     result = None
     if 'ผลบอล' in text:
