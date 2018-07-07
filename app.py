@@ -802,10 +802,11 @@ def get_fantasy_league_table(event):
             league_id = fantasy_id[event.source.room_id]
     if league_id is not None:
         response = requests.get('https://fantasy.fifa.com/services/api/leagues/{0}/leagueleaderboard?'
-                            'optType=1&vPageNo=1&vPageChunk=25&vTopNo=25&vPhaseId=0&gamedayId=1&buster=default'.
+                                'optType=1&vPageNo=1&vPageChunk=25&vTopNo=25&vPhaseId=0&gamedayId=1&buster=default'.
                                 format(league_id), cookies=jar, headers=headers)
         if response.status_code == 200:
             json = response.json()['Data']['Value']
+            print(response.text)
             bubble = {
                 'type': 'bubble',
                 'body': {
