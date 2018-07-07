@@ -804,9 +804,9 @@ def get_fantasy_league_table(event):
         response = requests.get('https://fantasy.fifa.com/services/api/leagues/{0}/leagueleaderboard?'
                                 'optType=1&vPageNo=1&vPageChunk=25&vTopNo=25&vPhaseId=0&gamedayId=1&buster=default'.
                                 format(league_id), cookies=jar, headers=headers)
+        print("fantasy response: {}".format(response.text))
         if response.status_code == 200:
             json = response.json()['Data']['Value']
-            print(response.text)
             bubble = {
                 'type': 'bubble',
                 'body': {
@@ -889,6 +889,13 @@ def get_fantasy_league_table(event):
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     text = event.message.text
+    if isinstance(event.source, SourceGroup):
+        print("GroupId: {}".format(event.source.group_id))
+    if isinstance(event.source, SourceRoom):
+        print("RoomId: {}".format(event.source.room_id))
+    if isinstance(event.source, SourceUser):
+        print("UserId: {}".format(event.source.user_id))
+
     result = None
     if 'ผลบอล' in text:
         result = handle_worldcup_results()
@@ -908,7 +915,7 @@ def handle_message(event):
     if re.search('(นักเตะทีมชาติ|นักเตะของ)([\w\W\s]+)', text):
         m = re.search('(นักเตะทีมชาติ|นักเตะของ)([\w\W\s]+)', text)
         result = handle_team_players(m.group(2))
-    if 'fantasy' in text or 'แฟนตาซี' in text:
+    if 'fantasy' in text.lower() or 'แฟนตาซี' in text.lower():
         result = get_fantasy_league_table(event)
     if result is not None:
         if isinstance(result, BubbleContainer) or isinstance(result, CarouselContainer):
