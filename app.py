@@ -9,6 +9,8 @@ from urllib import parse
 from linebot import (
     LineBotApi, WebhookHandler
 )
+from logging.config import dictConfig
+
 from linebot.exceptions import (
     InvalidSignatureError, LineBotApiError
 )
@@ -18,6 +20,22 @@ from linebot.models import (
     TextComponent, SpacerComponent, IconComponent, ButtonComponent,
     SeparatorComponent, CarouselContainer, SourceGroup, SourceUser, SourceRoom, PostbackEvent
 )
+
+dictConfig({
+    'version': 1,
+    'formatters': {'default': {
+        'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+    }},
+    'handlers': {'wsgi': {
+        'class': 'logging.StreamHandler',
+        'stream': 'ext://flask.logging.wsgi_errors_stream',
+        'formatter': 'default'
+    }},
+    'root': {
+        'level': 'INFO',
+        'handlers': ['wsgi']
+    }
+})
 
 app = Flask(__name__)
 app.register_blueprint(live_bp)
@@ -812,12 +830,15 @@ def get_fantasy_league_table(event):
     }
     league_id = None
     if isinstance(event.source, SourceGroup):
+        app.logger.info('group_id: {}'.format(event.source.group_id))
         if event.source.group_id in fantasy_id:
             league_id = fantasy_id[event.source.group_id]
     if isinstance(event.source, SourceUser):
+        app.logger.info('user_id: {}'.format(event.source.user_id))
         if event.source.user_id in fantasy_id:
             league_id = fantasy_id[event.source.user_id]
     if isinstance(event.source, SourceRoom):
+        app.logger.info('room_id: {}'.format(event.source.room_id))
         if event.source.room_id in fantasy_id:
             league_id = fantasy_id[event.source.room_id]
     if league_id is not None:
