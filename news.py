@@ -33,7 +33,6 @@ class News:
             'offset': offset,
             'access_token': access_token
         }
-        print("payload: {}".format(payload))
         return requests.post(url, data=payload)
 
     def _check_image_url(self, image_url):

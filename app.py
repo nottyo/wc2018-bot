@@ -1,24 +1,26 @@
-import os, re, json
+import json
+import os
+import re
+import time
 from datetime import datetime, date, timedelta
+from logging.config import dictConfig
+from urllib import parse
+
+import requests
 from flask import Flask, request, abort
 from googletrans import Translator
-from news import News
-import requests
-from urllib import parse
 from linebot import (
     LineBotApi, WebhookHandler
 )
-from logging.config import dictConfig
-
 from linebot.exceptions import (
-    InvalidSignatureError, LineBotApiError
+    InvalidSignatureError
 )
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
-    FlexSendMessage, BubbleContainer, ImageComponent, BoxComponent,
-    TextComponent, SpacerComponent, IconComponent, ButtonComponent,
-    SeparatorComponent, CarouselContainer, SourceGroup, SourceUser, SourceRoom, PostbackEvent
+    FlexSendMessage, BubbleContainer, CarouselContainer, SourceGroup, SourceUser, SourceRoom, PostbackEvent
 )
+
+from news import News
 
 dictConfig({
     'version': 1,
@@ -50,6 +52,8 @@ line_bot_api = LineBotApi(channel_access_token)
 handler = WebhookHandler(channel_secret)
 
 news = News()
+
+more_news_cache = {}
 
 wc_api = 'http://api.football-data.org/v1/competitions/467'
 wc_api_key = os.getenv('FOOTBALL_API_KEY', None)
@@ -189,13 +193,26 @@ def latest_news():
 
 @handler.add(PostbackEvent)
 def handle_postback(event):
+    sender_id = event.source.sender_id
     data = event.postback.data
     if data == 'scheme=more_news':
-        result = news.get_more_news(page_limit=4, page_count=5)
-        if isinstance(result, CarouselContainer):
-            print(result)
-            message = FlexSendMessage(alt_text='More News ดูบนมือถือนะครับ', contents=result)
-            line_bot_api.reply_message(reply_token=event.reply_token, messages=message)
+        epoch = time.time()
+        if sender_id not in more_news_cache:
+            more_news_cache[sender_id] = epoch
+            result = news.get_more_news(page_limit=4, page_count=5)
+            if isinstance(result, CarouselContainer):
+                message = FlexSendMessage(alt_text='More News ดูบนมือถือนะครับ', contents=result)
+                line_bot_api.reply_message(reply_token=event.reply_token, messages=message)
+        elif epoch - more_news_cache[sender_id] <= 300:
+            user_profile = line_bot_api.get_profile(sender_id)
+            message = "คุณ \'{0}\' อย่ากด More News ถี่ๆ นะครับ มัน flood message".format(user_profile.display_name)
+            line_bot_api.reply_message(reply_token=event.reply_token, messages=TextSendMessage(message))
+        else:
+            more_news_cache[sender_id] = epoch
+            result = news.get_more_news(page_limit=4, page_count=5)
+            if isinstance(result, CarouselContainer):
+                message = FlexSendMessage(alt_text='More News ดูบนมือถือนะครับ', contents=result)
+                line_bot_api.reply_message(reply_token=event.reply_token, messages=message)
 
 
 @app.route("/callback", methods=['POST'])
