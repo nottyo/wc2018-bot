@@ -828,15 +828,12 @@ def get_fantasy_league_table(event):
     }
     league_id = None
     if isinstance(event.source, SourceGroup):
-        app.logger.info('group_id: {}'.format(event.source.group_id))
         if event.source.group_id in fantasy_id:
             league_id = fantasy_id[event.source.group_id]
     if isinstance(event.source, SourceUser):
-        app.logger.info('user_id: {}'.format(event.source.user_id))
         if event.source.user_id in fantasy_id:
             league_id = fantasy_id[event.source.user_id]
     if isinstance(event.source, SourceRoom):
-        app.logger.info('room_id: {}'.format(event.source.room_id))
         if event.source.room_id in fantasy_id:
             league_id = fantasy_id[event.source.room_id]
     if league_id is not None:
@@ -928,12 +925,12 @@ def get_fantasy_league_table(event):
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     text = event.message.text
-    # if isinstance(event.source, SourceGroup):
-    #     print("GroupId: {}".format(event.source.group_id))
-    # if isinstance(event.source, SourceRoom):
-    #     print("RoomId: {}".format(event.source.room_id))
-    # if isinstance(event.source, SourceUser):
-    #     print("UserId: {}".format(event.source.user_id))
+    if isinstance(event.source, SourceGroup):
+        print("GroupId: {}".format(event.source.group_id))
+    if isinstance(event.source, SourceRoom):
+        print("RoomId: {}".format(event.source.room_id))
+    if isinstance(event.source, SourceUser):
+        print("UserId: {}".format(event.source.user_id))
     result = None
     if 'ผลบอล' in text:
         result = handle_worldcup_results()
