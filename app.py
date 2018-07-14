@@ -3,6 +3,7 @@ from datetime import datetime, date, timedelta
 from flask import Flask, request, abort
 from googletrans import Translator
 from live import live_bp
+from news import News
 import requests
 from urllib import parse
 from linebot import (
@@ -15,7 +16,7 @@ from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage,
     FlexSendMessage, BubbleContainer, ImageComponent, BoxComponent,
     TextComponent, SpacerComponent, IconComponent, ButtonComponent,
-    SeparatorComponent, CarouselContainer, SourceGroup, SourceUser, SourceRoom
+    SeparatorComponent, CarouselContainer, SourceGroup, SourceUser, SourceRoom, PostbackEvent
 )
 
 app = Flask(__name__)
@@ -31,6 +32,8 @@ channel_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', None)
 
 line_bot_api = LineBotApi(channel_access_token)
 handler = WebhookHandler(channel_secret)
+
+news = News()
 
 wc_api = 'http://api.football-data.org/v1/competitions/467'
 wc_api_key = os.getenv('FOOTBALL_API_KEY', None)
@@ -154,6 +157,23 @@ def homepage():
 
     <img src="http://loremflickr.com/600/400">
     """.format(time=the_time)
+
+
+@app.route('/latestnews', methods=['GET'])
+def latest_news():
+    source_id = request.args.get('source_id')
+    result = news.get_latest_news(4)
+    if isinstance(result, BubbleContainer):
+        line_bot_api.push_message(to=source_id, messages=FlexSendMessage(alt_text='Latest Football News ดูบนมือถือนะครับ',
+                                                                         contents=result))
+        return "ok"
+    if isinstance(result, str):
+        return result
+
+
+@handler.add(PostbackEvent)
+def handle_postback(event):
+    data = event.postback.data
 
 
 @app.route("/callback", methods=['POST'])
@@ -895,7 +915,6 @@ def handle_message(event):
     #     print("RoomId: {}".format(event.source.room_id))
     # if isinstance(event.source, SourceUser):
     #     print("UserId: {}".format(event.source.user_id))
-
     result = None
     if 'ผลบอล' in text:
         result = handle_worldcup_results()
@@ -909,6 +928,8 @@ def handle_message(event):
         result = handle_fixtures()
     if 'โปรแกรมวันนี้' in text:
         result = handle_today_fixtures()
+    if 'ข่าว' in text or 'news' in text.lower():
+        result = news.get_latest_news(4)
     if re.search('โปรแกรมของ([\w\W\s]+)', text):
         m = re.search('โปรแกรมของ([\w\W\s]+)', text)
         result = handle_team_fixture(m.group(1))
