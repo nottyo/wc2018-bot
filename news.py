@@ -2,8 +2,6 @@
 import requests
 import uuid
 import re
-import json
-import bbcode
 
 from linebot.models import (
     BubbleContainer
