@@ -2,7 +2,6 @@ import os, re, json
 from datetime import datetime, date, timedelta
 from flask import Flask, request, abort
 from googletrans import Translator
-from live import live_bp
 from news import News
 import requests
 from urllib import parse
@@ -38,7 +37,6 @@ dictConfig({
 })
 
 app = Flask(__name__)
-app.register_blueprint(live_bp)
 
 translator = Translator()
 with open('countries.json') as f:
