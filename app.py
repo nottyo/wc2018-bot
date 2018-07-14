@@ -190,6 +190,12 @@ def latest_news():
 @handler.add(PostbackEvent)
 def handle_postback(event):
     data = event.postback.data
+    if data == 'scheme=more_news':
+        result = news.get_more_news(page_limit=4, page_count=5)
+        if isinstance(result, CarouselContainer):
+            print(result)
+            message = FlexSendMessage(alt_text='More News ดูบนมือถือนะครับ', contents=result)
+            line_bot_api.reply_message(reply_token=event.reply_token, messages=message)
 
 
 @app.route("/callback", methods=['POST'])
