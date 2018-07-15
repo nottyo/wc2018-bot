@@ -39,6 +39,10 @@ class News:
         default_url = "https://is3-ssl.mzstatic.com/image/thumb/Purple118/v4/5a/06/" \
                    "49/5a06491d-2fe1-4805-8474-f3ebdc610266/source/512x512bb.jpg"
         try:
+            if str(image_url.startswith('http:')):
+                image_url = image_url.replace('http:', 'https:')
+            if '[' in image_url or ']' in image_url:
+                return default_url
             r = requests.get(image_url)
             if r.status_code == 200:
                 return image_url
@@ -61,9 +65,9 @@ class News:
             for data in data_list:
                 if count == limit:
                     break
-                if str(data['image']).startswith('http:'):
-                    data['image'] = str(data['image']).replace('http:', 'https:')
-                    data['image'] = self._check_image_url(data['image'])
+                data['image'] = self._check_image_url(data['image'])
+
+
                 if add_bubble_header is False:
                     bubble = {
                         'type': 'bubble',
